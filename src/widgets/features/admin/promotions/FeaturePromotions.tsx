@@ -1,0 +1,11 @@
+import { CusCard } from '@/components/shared/card/CusCard'
+import PageHeader from '@/widgets/shared-ui/PageHeader'
+
+export default function FeaturePromotions() {
+  return (
+    <div className="space-y-4 px-4 pb-6 tablet:px-6">
+      <PageHeader title="Комбо и акции" subtitle="Комбо-пакеты, абонементы и скидки." />
+      <CusCard className="p-8 text-center text-sm text-park-textMuted">Раздел в разработке</CusCard>
+    </div>
+  )
+}

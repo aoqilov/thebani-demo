@@ -1,0 +1,110 @@
+@import url("https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+
+/* class-based dark mode: toggle `dark` on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Faqat custom breakpoint'lar: tablet / desktop / wide (sm, md, lg ishlatilmaydi) */
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-tablet: 480px;
+  --breakpoint-desktop: 1020px;
+  --breakpoint-wide: 1440px;
+
+  --font-sans: "Public Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-park-bg: var(--bg-main);
+  --color-park-bgCard: var(--bg-second);
+  --color-park-bgHover: var(--bg-hover);
+  --color-park-bgInput: var(--bg-input);
+  --color-park-bgTooltip: var(--bg-tooltip);
+  --color-park-border: var(--border-default);
+  --color-park-border2: var(--border-2);
+  --color-park-text: var(--text-default);
+  --color-park-text2: var(--text-2);
+  --color-park-text3: var(--text-3);
+  --color-park-text4: var(--text-4);
+  --color-park-textMuted: var(--text-muted);
+  --color-park-textDim: var(--text-dim);
+
+  /* Kaiadmin palitrasi */
+  --color-primary: #1572e8;
+  --color-secondary: #6861ce;
+  --color-success: #31ce36;
+  --color-info: #48abf7;
+  --color-warning: #ffad46;
+  --color-danger: #f25961;
+  --color-dark: #1a2035;
+
+  --shadow-card: 0 2px 6px 0 rgb(0 0 0 / 0.08);
+}
+
+:root {
+  --bg-main: #f9fbfd;
+  --bg-second: #ffffff;
+  --bg-hover: #f1f3f8;
+  --bg-input: #ffffff;
+  --bg-tooltip: #ffffff;
+
+  --text-default: #1a2035;
+  --text-2: #2b3250;
+  --text-3: #3d4466;
+  --text-4: #575962;
+  --text-muted: #8d9498;
+  --text-dim: #b0b5bb;
+
+  --border-default: #ebedf2;
+  --border-2: #d9dce3;
+
+  --chart-grid: #ebedf2;
+  --chart-tick: #8d9498;
+
+  /* Sidebar (Settings panelidan o'zgaradi — ThemeContext yozadi) */
+  --sidebar-bg: #1a2035;
+  --sidebar-fg: #ffffff;
+  --sidebar-fg-muted: rgb(255 255 255 / 0.65);
+  --sidebar-hover: rgb(255 255 255 / 0.08);
+  --sidebar-border: rgb(255 255 255 / 0.1);
+  --sidebar-active-bg: #1572e8;
+  --sidebar-active-fg: #ffffff;
+}
+
+.dark {
+  --bg-main: #1a2035;
+  --bg-second: #202940;
+  --bg-hover: #29324d;
+  --bg-input: #1a2035;
+  --bg-tooltip: #29324d;
+
+  --text-default: #ffffff;
+  --text-2: #e3e6ef;
+  --text-3: #c5c9d6;
+  --text-4: #a9afbf;
+  --text-muted: #8d9498;
+  --text-dim: #6c7185;
+
+  --border-default: #2c3552;
+  --border-2: #3a4466;
+
+  --chart-grid: #2c3552;
+  --chart-tick: #8d9498;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-4);
+    font-family: var(--font-sans);
+    margin: 0;
+  }
+}
+
+/* Scroll ishlaydi, lekin scrollbar ko'rinmaydi */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
