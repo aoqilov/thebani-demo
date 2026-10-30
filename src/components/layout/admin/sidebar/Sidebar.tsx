@@ -84,7 +84,7 @@ function SidebarContent({ onClose, onNavClick, collapsed }: { onClose: () => voi
   const label = 'mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-[var(--sidebar-fg-muted)] opacity-70'
 
   return (
-    <div style={{ width: collapsed ? 92 : 270 }} className="flex h-full flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)] shadow-lg">
+    <div style={{ width: collapsed ? 92 : 270 }} className="flex h-full flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)] shadow-lg">
       <div className={cn('flex h-[73px] shrink-0 items-center gap-2.5 border-b border-[var(--sidebar-border)]', collapsed ? 'justify-center' : 'px-5')}>
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-white">T</div>
         {!collapsed && <p className="flex-1 text-lg font-bold tracking-wide">Thebani</p>}

@@ -2,6 +2,7 @@ import { lazy, type ReactElement } from 'react'
 import { type RouteObject } from 'react-router-dom'
 import AppLayout from '@/components/layout/admin/AppLayout'
 import RoleAppLayout from '@/components/layout/role-app/RoleAppLayout'
+import WaiterLayout from '@/widgets/features/waiter/WaiterLayout'
 import { AuthGuard } from '@/middleware/AuthGuard'
 import { RoleGroups, RoleTypes } from '@/const/constData'
 import Login from '@/pages/Login'
@@ -10,6 +11,8 @@ import Unauthorized from '@/pages/Unauthorized'
 
 const WarehouseInventory = lazy(() => import('@/pages/admin/control/WarehouseInventory'))
 const WarehouseProduction = lazy(() => import('@/pages/admin/control/WarehouseProduction'))
+const WarehousePurchases = lazy(() => import('@/pages/admin/control/WarehousePurchases'))
+const WarehouseButchering = lazy(() => import('@/pages/admin/control/WarehouseButchering'))
 const WarehouseOrders = lazy(() => import('@/pages/admin/control/WarehouseOrders'))
 const WarehouseTurnover = lazy(() => import('@/pages/admin/control/WarehouseTurnover'))
 const WarehouseVariance = lazy(() => import('@/pages/admin/control/WarehouseVariance'))
@@ -24,6 +27,11 @@ const LiveRooms = lazy(() => import('@/pages/admin/main/LiveRooms'))
 const LiveKitchen = lazy(() => import('@/pages/admin/main/LiveKitchen'))
 const ReportsFinance = lazy(() => import('@/pages/admin/main/ReportsFinance'))
 const ReportsShifts = lazy(() => import('@/pages/admin/main/ReportsShifts'))
+const ReportsCashflow = lazy(() => import('@/pages/admin/main/ReportsCashflow'))
+const ReportsMenu = lazy(() => import('@/pages/admin/main/ReportsMenu'))
+const ReportsStaff = lazy(() => import('@/pages/admin/main/ReportsStaff'))
+const ReportsPnl = lazy(() => import('@/pages/admin/main/ReportsPnl'))
+const AccountingExpenses = lazy(() => import('@/pages/admin/main/AccountingExpenses'))
 const ReportsServices = lazy(() => import('@/pages/admin/main/ReportsServices'))
 const EmployeeDetail = lazy(() => import('@/pages/admin/control/EmployeeDetail'))
 const Tariffs = lazy(() => import('@/pages/admin/control/Tariffs'))
@@ -56,6 +64,7 @@ const RazdevalkaProfile = lazy(() => import('@/pages/roles/razdevalka/Razdevalka
 const WaiterTableOrder = lazy(() => import('@/pages/roles/waiter/WaiterTableOrder'))
 const WaiterTables = lazy(() => import('@/pages/roles/waiter/WaiterTables'))
 const WaiterOrders = lazy(() => import('@/pages/roles/waiter/WaiterOrders'))
+const WaiterClosed = lazy(() => import('@/pages/roles/waiter/WaiterClosed'))
 const WaiterProfile = lazy(() => import('@/pages/roles/waiter/WaiterProfile'))
 const CookOrders = lazy(() => import('@/pages/roles/cook/CookOrders'))
 const CookProfile = lazy(() => import('@/pages/roles/cook/CookProfile'))
@@ -83,6 +92,8 @@ export const routes: RouteObject[] = [
       { path: '/ops', element: rg(<OpsCenter />, RoleGroups.OPS) },
       { path: '/warehouse/inventory', element: rg(<WarehouseInventory />, RoleGroups.STOCK) },
       { path: '/warehouse/production', element: rg(<WarehouseProduction />, RoleGroups.STOCK) },
+      { path: '/warehouse/butchering', element: rg(<WarehouseButchering />, RoleGroups.STOCK) },
+      { path: '/warehouse/purchases', element: rg(<WarehousePurchases />, RoleGroups.STOCK) },
       { path: '/warehouse/orders', element: rg(<WarehouseOrders />, RoleGroups.STOCK) },
       { path: '/warehouse/turnover', element: rg(<WarehouseTurnover />, RoleGroups.STOCK) },
       { path: '/warehouse/variance', element: rg(<WarehouseVariance />, RoleGroups.STOCK) },
@@ -92,6 +103,11 @@ export const routes: RouteObject[] = [
       { path: '/live/kitchen', element: rg(<LiveKitchen />, RoleGroups.OPS) },
       { path: '/reports/finance', element: rg(<ReportsFinance />, RoleGroups.FINANCE) },
       { path: '/reports/shifts', element: rg(<ReportsShifts />, RoleGroups.FINANCE_SHIFT) },
+      { path: '/reports/cashflow', element: rg(<ReportsCashflow />, RoleGroups.FINANCE) },
+      { path: '/reports/menu', element: rg(<ReportsMenu />, RoleGroups.FINANCE) },
+      { path: '/reports/staff', element: rg(<ReportsStaff />, RoleGroups.FINANCE) },
+      { path: '/reports/pnl', element: rg(<ReportsPnl />, RoleGroups.FINANCE) },
+      { path: '/reports/expenses', element: rg(<AccountingExpenses />, RoleGroups.FINANCE) },
       { path: '/reports/services', element: rg(<ReportsServices />, RoleGroups.SERVICES) },
       { path: '/employee/:id', element: rg(<EmployeeDetail />, RoleGroups.PEOPLE) },
       { path: '/tariffs', element: rg(<Tariffs />, RoleGroups.PRICING) },
@@ -146,11 +162,12 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/waiter',
-    element: <AuthGuard roles={[RoleTypes.WAITER]}><RoleAppLayout appKey="waiter" /></AuthGuard>,
+    element: <AuthGuard roles={[RoleTypes.WAITER]}><WaiterLayout /></AuthGuard>,
     children: [
       { index: true, element: <WaiterTables /> },
       { path: 'table/:tableId', element: <WaiterTableOrder /> },
       { path: 'orders', element: <WaiterOrders /> },
+      { path: 'closed', element: <WaiterClosed /> },
       { path: 'profile', element: <WaiterProfile /> },
     ],
   },

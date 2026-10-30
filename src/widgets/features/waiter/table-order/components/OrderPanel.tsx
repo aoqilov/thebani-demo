@@ -1,12 +1,14 @@
-import { LuBell, LuMinus, LuPlus, LuSend, LuTrash2 } from 'react-icons/lu'
+import { useState } from 'react'
+import { LuBell, LuMinus, LuPlus, LuSend, LuTrash2, LuX } from 'react-icons/lu'
 import { CusAlert } from '@/components/ui/alert/CusAlert'
 import { CusBadge } from '@/components/ui/badge/CusBadge'
 import { CusButton } from '@/components/ui/buttons/CusButton'
 import { STATION_LABEL } from '@/types/menu.types'
-import { ITEM_STATUS_LABEL, draftTotal, orderTotal, type DraftLine, type Order } from '@/types/order.types'
+import { ITEM_STATUS_LABEL, draftTotal, orderTotal, type DraftLine, type Order, type OrderItem } from '@/types/order.types'
 import { fmtMoney } from '@/utils/format'
 import { itemStatusColor, minutesSince } from '../../constants'
 import { useRequestBill, useSetItemStatus } from '../../hooks/useOrders'
+import ModalCancelItem from '../modals/ModalCancelItem'
 
 interface Props {
   order: Order
@@ -24,6 +26,7 @@ const modsText = (mods: DraftLine['mods']) => mods.map((m) => m.option).join(', 
 export default function OrderPanel({ order, draft, onQty, onRemove, onSend, sending, error, notice }: Props) {
   const setStatus = useSetItemStatus()
   const bill = useRequestBill()
+  const [cancelling, setCancelling] = useState<OrderItem | null>(null)
 
   const kitchen = draft.filter((l) => l.station === 'kitchen').reduce((s, l) => s + l.qty, 0)
   const bar = draft.filter((l) => l.station === 'bar').reduce((s, l) => s + l.qty, 0)
@@ -82,11 +85,16 @@ export default function OrderPanel({ order, draft, onQty, onRemove, onSend, send
                             <p className="text-sm text-park-text">{i.qty} × {i.name}</p>
                             <p className="text-xs text-park-textMuted">{STATION_LABEL[i.station]}{i.mods.length > 0 && ` · ${modsText(i.mods)}`}</p>
                           </div>
-                          {i.status === 'ready' ? (
-                            <CusButton size="sm" color="success" onClick={() => setStatus.mutate({ orderId: order.id, itemId: i.id, status: 'served' })}>Подать</CusButton>
-                          ) : (
-                            <CusBadge color={itemStatusColor[i.status]}>{ITEM_STATUS_LABEL[i.status]}</CusBadge>
-                          )}
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            {i.status === 'ready' ? (
+                              <CusButton size="sm" color="success" onClick={() => setStatus.mutate({ orderId: order.id, itemId: i.id, status: 'served' })}>Подать</CusButton>
+                            ) : (
+                              <CusBadge color={itemStatusColor[i.status]}>{ITEM_STATUS_LABEL[i.status]}</CusBadge>
+                            )}
+                            {i.status !== 'served' && (
+                              <button onClick={() => setCancelling(i)} className="flex h-9 w-9 items-center justify-center rounded-lg text-park-textMuted hover:bg-danger/10 hover:text-danger" aria-label={`Отменить: ${i.name}`} title="Отменить позицию"><LuX size={18} /></button>
+                            )}
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -96,7 +104,23 @@ export default function OrderPanel({ order, draft, onQty, onRemove, onSend, send
             </div>
           </section>
         )}
+
+        {(order.cancelled?.length ?? 0) > 0 && (
+          <section>
+            <h3 className="mb-2 text-sm font-bold text-park-text">Отменено</h3>
+            <ul className="divide-y divide-park-border rounded-xl border border-park-border">
+              {order.cancelled!.map((c) => (
+                <li key={c.id} className="px-3 py-2">
+                  <p className="text-sm text-park-textMuted line-through">{c.qty} × {c.name}</p>
+                  <p className="text-xs text-park-textMuted">{c.reason} · {c.by} · {minutesSince(c.at)} мин назад</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
+
+      <ModalCancelItem orderId={order.id} item={cancelling} onClose={() => setCancelling(null)} />
 
       <div className="mt-4 space-y-3 border-t border-park-border pt-4">
         <div className="flex items-end justify-between">

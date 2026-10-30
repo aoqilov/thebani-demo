@@ -5,6 +5,8 @@ import { CusButton } from '@/components/ui/buttons/CusButton'
 import { CusDialog } from '@/components/ui/dialog/CusDialog'
 import { CusImage } from '@/components/ui/image/CusImage'
 import { CusTextArea } from '@/components/ui/inputs/CusTextArea'
+import { modAvailability } from '@/data/menu.calc'
+import type { CostCtx } from '@/data/recipe.calc'
 import { cn } from '@/lib/cn'
 import type { MenuItem, ModifierGroup } from '@/types/menu.types'
 import type { OrderItemMod } from '@/types/order.types'
@@ -13,12 +15,13 @@ import { fmtMoney } from '@/utils/format'
 interface Props {
   item: MenuItem | null
   groups: ModifierGroup[]
+  ctx: CostCtx
   onClose: () => void
   onAdd: (item: MenuItem, mods: OrderItemMod[], comment: string, qty: number) => void
 }
 
 /** Выбор модификаторов, комментария и количества перед добавлением в заказ. */
-export default function ModifierSheet({ item, groups, onClose, onAdd }: Props) {
+export default function ModifierSheet({ item, groups, ctx, onClose, onAdd }: Props) {
   const [selected, setSelected] = useState<Record<number, number[]>>({})
   const [comment, setComment] = useState('')
   const [qty, setQty] = useState(1)
@@ -31,12 +34,14 @@ export default function ModifierSheet({ item, groups, onClose, onAdd }: Props) {
   }, [item])
 
   const mods: OrderItemMod[] = itemGroups.flatMap((g) =>
-    g.options.filter((o) => selected[g.id]?.includes(o.id)).map((o) => ({ group: g.name, option: o.name, price: o.price })),
+    g.options.filter((o) => selected[g.id]?.includes(o.id)).map((o) => ({ group: g.name, option: o.name, price: o.price, productId: o.productId, qty: o.qty, replaceProductId: o.replaceProductId })),
   )
   const unit = (item?.price ?? 0) + mods.reduce((s, m) => s + m.price, 0)
 
   function toggle(g: ModifierGroup, optionId: number) {
     setError(null)
+    const opt = g.options.find((o) => o.id === optionId)
+    if (opt && !modAvailability(opt, ctx).available) return
     setSelected((s) => {
       const cur = s[g.id] ?? []
       if (!g.multiple) return { ...s, [g.id]: [optionId] }
@@ -73,14 +78,17 @@ export default function ModifierSheet({ item, groups, onClose, onAdd }: Props) {
               <div className="flex flex-wrap gap-2">
                 {g.options.map((o) => {
                   const on = selected[g.id]?.includes(o.id)
+                  const stop = !modAvailability(o, ctx).available
                   return (
                     <button
                       key={o.id}
                       type="button"
+                      disabled={stop}
                       onClick={() => toggle(g, o.id)}
-                      className={cn('min-h-12 rounded-xl border-2 px-4 text-sm font-semibold transition active:scale-95', on ? 'border-primary bg-primary/10 text-primary' : 'border-park-border text-park-text3 hover:bg-park-bgHover')}
+                      className={cn('min-h-12 rounded-xl border-2 px-4 text-sm font-semibold transition active:scale-95 disabled:opacity-50 disabled:active:scale-100', on ? 'border-primary bg-primary/10 text-primary' : 'border-park-border text-park-text3 hover:bg-park-bgHover')}
                     >
                       {o.name}{o.price > 0 && <span className="ml-1 text-xs text-park-textMuted">+{fmtMoney(o.price)}</span>}
+                      {stop && <span className="ml-1 text-xs text-danger">стоп</span>}
                     </button>
                   )
                 })}

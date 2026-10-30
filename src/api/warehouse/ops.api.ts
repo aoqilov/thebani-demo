@@ -3,7 +3,7 @@ import { negativeProducts } from '@/data/warehouse.calc'
 import { buildStock } from '@/data/warehouse.calc'
 import { unitCost, type CostCtx } from '@/data/recipe.calc'
 import { getWarehouse, updateWarehouse } from '@/data/warehouse.store'
-import type { DocLine, Inventory, Production, PurchaseOrder, WarehouseDoc } from '@/types/warehouse.types'
+import type { Butchering, DocLine, Inventory, Production, PurchaseOrder, WarehouseDoc } from '@/types/warehouse.types'
 
 // TODO: когда появится backend — заменить тела функций на вызовы axios (интерфейс не меняется).
 const ms = 100
@@ -198,6 +198,82 @@ export async function unpostProduction(id: number): Promise<void> {
 export async function deleteProduction(id: number): Promise<void> {
   if (getWarehouse().productions.find((p) => p.id === id)?.status === 'posted') throw new Error('Нельзя удалить проведённый акт.')
   updateWarehouse((s) => ({ ...s, productions: s.productions.filter((p) => p.id !== id) }))
+  await delay(null, ms)
+}
+
+// ════════════════ Разделка ════════════════
+
+export const fetchButcherings = (): Promise<Butchering[]> =>
+  delay([...getWarehouse().butcherings].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id), ms)
+export const fetchButchering = (id: number): Promise<Butchering | undefined> => delay(getWarehouse().butcherings.find((b) => b.id === id), ms)
+
+export async function saveButchering(b: Butchering): Promise<Butchering> {
+  const existing = getWarehouse().butcherings.find((x) => x.id === b.id)
+  if (existing?.status === 'posted') throw new Error('Проведённый акт нельзя изменить. Сначала отмените проведение.')
+  let saved!: Butchering
+  updateWarehouse((s) => {
+    if (existing) {
+      saved = { ...b, status: 'draft', docIds: [], totalCost: undefined }
+      return { ...s, butcherings: s.butcherings.map((x) => (x.id === b.id ? saved : x)) }
+    }
+    saved = { ...b, id: nextId(s.butcherings), number: nextNumber('РЗ', s.butcherings), status: 'draft', docIds: [] }
+    return { ...s, butcherings: [...s.butcherings, saved] }
+  })
+  return delay(saved, ms)
+}
+
+/**
+ * Проведение: сырьё списывается, каждый выход приходуется по своей доле себестоимости сырья.
+ * Остаток доли до 100% — отход: он не приходуется (убыток).
+ */
+export async function postButchering(id: number): Promise<void> {
+  const st = getWarehouse()
+  const b = st.butcherings.find((x) => x.id === id)
+  if (!b) throw new Error('Акт не найден.')
+  if (!b.inputProductId) throw new Error('Выберите сырьё для разделки.')
+  if (!(b.inputQty > 0)) throw new Error('Укажите количество сырья.')
+  if (!b.outputs.length) throw new Error('Добавьте хотя бы один выход.')
+  if (b.outputs.some((o) => !(o.qty > 0))) throw new Error('Количество в каждой строке выходов должно быть больше нуля.')
+  if (b.outputs.some((o) => o.sharePct < 0)) throw new Error('Доля себестоимости не может быть отрицательной.')
+  if (b.outputs.some((o) => o.productId === b.inputProductId)) throw new Error('Сырьё не может быть и выходом разделки.')
+  const share = b.outputs.reduce((sum, o) => sum + o.sharePct, 0)
+  if (share > 100 + 1e-9) throw new Error(`Сумма долей себестоимости ${share}% — больше 100%.`)
+
+  const ctx = costCtx(st)
+  const cost = b.inputQty * unitCost(b.inputProductId, ctx)
+
+  let docs = st.docs
+  const used = appendDoc(docs, {
+    type: 'expense', date: b.date, supplierId: null, reason: 'Разделка', source: b.number, comment: `Сырьё для ${b.number}`,
+    lines: [{ productId: b.inputProductId, qty: r3(b.inputQty), price: 0 }],
+  })
+  docs = used.docs
+  const made = appendDoc(docs, {
+    type: 'income', date: b.date, supplierId: null, reason: '', source: b.number, comment: `Получено по ${b.number}`,
+    lines: b.outputs.map((o): DocLine => ({ productId: o.productId, qty: o.qty, price: Math.round((cost * o.sharePct) / 100 / o.qty) })),
+  })
+  docs = made.docs
+
+  const bad = newNegatives(st.docs, docs)
+  if (bad.length) throw new Error(`Не хватает сырья на складе: ${namesOf(bad)}.`)
+  updateWarehouse((s) => ({ ...s, docs, butcherings: s.butcherings.map((x) => (x.id === id ? { ...x, status: 'posted' as const, docIds: [used.doc.id, made.doc.id], totalCost: Math.round(cost) } : x)) }))
+  await delay(null, ms)
+}
+
+export async function unpostButchering(id: number): Promise<void> {
+  const st = getWarehouse()
+  const b = st.butcherings.find((x) => x.id === id)
+  if (!b) throw new Error('Акт не найден.')
+  const docs = st.docs.filter((d) => !b.docIds.includes(d.id))
+  const bad = newNegatives(st.docs, docs)
+  if (bad.length) throw new Error(`Отмена невозможна: продукт уже использован (${namesOf(bad)}).`)
+  updateWarehouse((s) => ({ ...s, docs, butcherings: s.butcherings.map((x) => (x.id === id ? { ...x, status: 'draft' as const, docIds: [], totalCost: undefined } : x)) }))
+  await delay(null, ms)
+}
+
+export async function deleteButchering(id: number): Promise<void> {
+  if (getWarehouse().butcherings.find((b) => b.id === id)?.status === 'posted') throw new Error('Нельзя удалить проведённый акт.')
+  updateWarehouse((s) => ({ ...s, butcherings: s.butcherings.filter((b) => b.id !== id) }))
   await delay(null, ms)
 }
 

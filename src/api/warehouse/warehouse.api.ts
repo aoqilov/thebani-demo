@@ -13,10 +13,41 @@ function newNegatives(before: WarehouseDoc[], after: WarehouseDoc[]): number[] {
 }
 
 export const fetchGroups = (): Promise<ProductGroup[]> => delay(getWarehouse().groups, ms)
+const groupDescendants = (groups: ProductGroup[], id: number): number[] => [id, ...groups.filter((g) => g.parentId === id).flatMap((g) => groupDescendants(groups, g.id))]
+
+export async function saveGroup(g: { id?: number; name: string; parentId: number | null }): Promise<ProductGroup> {
+  const name = g.name.trim()
+  if (!name) throw new Error('Укажите название группы.')
+  const { groups } = getWarehouse()
+  if (groups.some((x) => x.id !== g.id && x.parentId === g.parentId && x.name.toLowerCase() === name.toLowerCase())) throw new Error('В этой папке уже есть группа с таким названием.')
+  if (g.id && g.parentId !== null && groupDescendants(groups, g.id).includes(g.parentId)) throw new Error('Группу нельзя переместить внутрь самой себя.')
+  let saved!: ProductGroup
+  updateWarehouse((s) => {
+    if (g.id) {
+      saved = { id: g.id, name, parentId: g.parentId }
+      return { ...s, groups: s.groups.map((x) => (x.id === g.id ? saved : x)) }
+    }
+    saved = { id: Math.max(0, ...s.groups.map((x) => x.id)) + 1, name, parentId: g.parentId }
+    return { ...s, groups: [...s.groups, saved] }
+  })
+  return delay(saved, ms)
+}
+
+/** Удалять можно только пустую группу: без подгрупп и без номенклатуры (включая удалённую). */
+export async function deleteGroup(id: number): Promise<void> {
+  const s = getWarehouse()
+  if (s.groups.some((g) => g.parentId === id)) throw new Error('В группе есть подгруппы. Сначала удалите или переместите их.')
+  if (s.products.some((p) => p.groupId === id)) throw new Error('В группе есть товары. Сначала переместите их в другую группу.')
+  updateWarehouse((st) => ({ ...st, groups: st.groups.filter((g) => g.id !== id) }))
+  await delay(null, ms)
+}
+
 export const fetchSuppliers = (): Promise<Supplier[]> => delay(getWarehouse().suppliers, ms)
 export const fetchProducts = (): Promise<Product[]> => delay(getWarehouse().products, ms)
 
-export async function saveProduct(p: Omit<Product, 'id' | 'code'> & { id?: number }): Promise<Product> {
+/** copyRecipeFrom — при копировании товара тех. карта исходного копируется в новый. */
+export async function saveProduct(input: Omit<Product, 'id' | 'code'> & { id?: number; copyRecipeFrom?: number }): Promise<Product> {
+  const { copyRecipeFrom, ...p } = input
   let saved!: Product
   updateWarehouse((s) => {
     if (p.id) {
@@ -25,15 +56,29 @@ export async function saveProduct(p: Omit<Product, 'id' | 'code'> & { id?: numbe
     }
     const id = Math.max(0, ...s.products.map((x) => x.id)) + 1
     saved = { ...p, id, code: `${p.kind === 'dish' ? 'B' : 'T'}-${String(id).padStart(4, '0')}` }
-    return { ...s, products: [...s.products, saved] }
+    const src = copyRecipeFrom ? s.recipes.find((r) => r.productId === copyRecipeFrom) : undefined
+    const recipes = src && p.kind !== 'goods' ? [...s.recipes, { ...src, productId: id, lines: src.lines.map((l) => ({ ...l })) }] : s.recipes
+    return { ...s, products: [...s.products, saved], recipes }
   })
   return delay(saved, ms)
 }
 
+/**
+ * Мягкое удаление, как в iiko: товар скрывается из справочника и выбора, но остаётся в документах и отчётах.
+ * Нельзя удалить то, что входит в тех. карты действующих позиций или стоит в меню.
+ */
 export async function deleteProduct(id: number): Promise<void> {
-  const used = getWarehouse().docs.some((d) => d.lines.some((l) => l.productId === id))
-  if (used) throw new Error('Товар используется в документах — его можно только скрыть (снять «Активен»).')
-  updateWarehouse((s) => ({ ...s, products: s.products.filter((p) => p.id !== id) }))
+  const s = getWarehouse()
+  const alive = (pid: number) => !s.products.find((x) => x.id === pid)?.deleted
+  const inRecipes = s.recipes.filter((r) => alive(r.productId) && r.lines.some((l) => l.productId === id)).map((r) => s.products.find((x) => x.id === r.productId)?.name ?? r.productId)
+  if (inRecipes.length) throw new Error(`Входит в тех. карты: ${inRecipes.slice(0, 3).join(', ')}${inRecipes.length > 3 ? ` и ещё ${inRecipes.length - 3}` : ''}. Сначала уберите его из рецептов.`)
+  if (s.menuItems.some((m) => m.productId === id)) throw new Error('Товар стоит в меню. Сначала уберите позицию из меню.')
+  updateWarehouse((st) => ({ ...st, products: st.products.map((p) => (p.id === id ? { ...p, deleted: true, active: false } : p)) }))
+  await delay(null, ms)
+}
+
+export async function restoreProduct(id: number): Promise<void> {
+  updateWarehouse((s) => ({ ...s, products: s.products.map((p) => (p.id === id ? { ...p, deleted: false, active: true } : p)) }))
   await delay(null, ms)
 }
 

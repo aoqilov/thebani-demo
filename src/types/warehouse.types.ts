@@ -23,6 +23,8 @@ export interface Product {
   /** Цена продажи (только для блюд), сум */
   price: number
   active: boolean
+  /** Удалён: скрыт из списков, но остаётся в документах и отчётах; можно восстановить */
+  deleted?: boolean
 }
 
 /** Строка тех. карты. Нетто = брутто × (1 − потери/100). Количество — в единицах ингредиента. */
@@ -143,6 +145,32 @@ export interface Production {
   lines: ProductionLine[]
   docIds: number[]
   /** Общая себестоимость партии, фиксируется при проведении */
+  totalCost?: number
+}
+
+/** Что получилось при разделке: товар, количество и доля себестоимости исходного сырья (%). */
+export interface ButcheringOutput {
+  productId: number
+  qty: number
+  sharePct: number
+}
+
+/**
+ * Акт разделки: одно сырьё (например, тушка) даёт несколько продуктов (филе, кости, крылья).
+ * Себестоимость сырья делится между выходами по долям; остаток доли (до 100%) — отход, он нигде не приходуется.
+ */
+export interface Butchering {
+  id: number
+  number: string
+  date: string
+  status: DocStatus
+  comment: string
+  /** 0 — сырьё ещё не выбрано */
+  inputProductId: number
+  inputQty: number
+  outputs: ButcheringOutput[]
+  docIds: number[]
+  /** Себестоимость исходного сырья, фиксируется при проведении */
   totalCost?: number
 }
 

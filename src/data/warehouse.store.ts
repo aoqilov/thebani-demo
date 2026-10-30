@@ -1,7 +1,8 @@
 import { queryClient } from '@/api-config/queryClient'
-import type { Inventory, Product, ProductGroup, Production, PurchaseOrder, Recipe, Supplier, WarehouseDoc } from '@/types/warehouse.types'
+import type { Expense } from '@/types/accounting.types'
+import type { Butchering, Inventory, Product, ProductGroup, Production, PurchaseOrder, Recipe, Supplier, WarehouseDoc } from '@/types/warehouse.types'
 import type { MenuCategory, MenuItem, ModifierGroup } from '@/types/menu.types'
-import type { Order, Shift, TableDef } from '@/types/order.types'
+import type { Order, Shift, TableCleaning, TableDef } from '@/types/order.types'
 import type { Bracelet, BraceletEvent } from '@/types/bracelet.types'
 import type { LockEvent, Locker } from '@/types/locker.types'
 import type { Master, Service, ServiceDirection } from '@/types/services.types'
@@ -12,9 +13,10 @@ import { seedLockEvents, seedLockers } from './locker.mock'
 import { seedShopItems } from './shop.mock'
 import { seedDirections, seedMasters, seedServices } from './services.mock'
 import { seedTariffs } from './tariff.mock'
-import { seedOrders, seedShifts, seedTables } from './order.mock'
+import { seedOrders, seedShifts, seedTableCleanings, seedTables } from './order.mock'
 import { seedCategories, seedMenuItems, seedModifierGroups } from './menu.mock'
-import { seedDocs, seedGroups, seedInventories, seedProductions, seedProducts, seedPurchaseOrders, seedRecipes, seedSuppliers } from './warehouse.mock'
+import { seedExpenses } from './expenses.mock'
+import { seedButcherings, seedDocs, seedGroups, seedInventories, seedProductions, seedProducts, seedPurchaseOrders, seedRecipes, seedSuppliers } from './warehouse.mock'
 
 export interface WarehouseState {
   groups: ProductGroup[]
@@ -27,6 +29,7 @@ export interface WarehouseState {
   modifierGroups: ModifierGroup[]
   tables: TableDef[]
   orders: Order[]
+  tableCleanings: TableCleaning[]
   shifts: Shift[]
   tariffs: Tariff[]
   directions: ServiceDirection[]
@@ -39,10 +42,12 @@ export interface WarehouseState {
   shopItems: ShopItem[]
   inventories: Inventory[]
   productions: Production[]
+  butcherings: Butchering[]
+  expenses: Expense[]
   purchaseOrders: PurchaseOrder[]
 }
 
-const KEY = 'thebani_warehouse_v15'
+const KEY = 'thebani_warehouse_v21'
 
 function load(): WarehouseState | null {
   try {
@@ -53,7 +58,7 @@ function load(): WarehouseState | null {
   }
 }
 
-let state: WarehouseState = load() ?? { groups: seedGroups, products: seedProducts, suppliers: seedSuppliers, docs: seedDocs, recipes: seedRecipes, menuCategories: seedCategories, menuItems: seedMenuItems, modifierGroups: seedModifierGroups, tables: seedTables, orders: seedOrders, shifts: seedShifts, tariffs: seedTariffs, directions: seedDirections, services: seedServices, masters: seedMasters, lockers: seedLockers, lockEvents: seedLockEvents, bracelets: seedBracelets, braceletEvents: seedBraceletEvents, shopItems: seedShopItems, inventories: seedInventories, productions: seedProductions, purchaseOrders: seedPurchaseOrders }
+let state: WarehouseState = load() ?? { groups: seedGroups, products: seedProducts, suppliers: seedSuppliers, docs: seedDocs, recipes: seedRecipes, menuCategories: seedCategories, menuItems: seedMenuItems, modifierGroups: seedModifierGroups, tables: seedTables, orders: seedOrders, tableCleanings: seedTableCleanings, shifts: seedShifts, tariffs: seedTariffs, directions: seedDirections, services: seedServices, masters: seedMasters, lockers: seedLockers, lockEvents: seedLockEvents, bracelets: seedBracelets, braceletEvents: seedBraceletEvents, shopItems: seedShopItems, inventories: seedInventories, productions: seedProductions, butcherings: seedButcherings, expenses: seedExpenses, purchaseOrders: seedPurchaseOrders }
 
 // Синхронизация между вкладками (например, склад и официант в разных окнах).
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('thebani-store') : null
@@ -80,7 +85,7 @@ export function updateWarehouse(fn: (s: WarehouseState) => WarehouseState) {
 /** Сброс демо-данных к исходным. */
 export function resetWarehouse() {
   localStorage.removeItem(KEY)
-  state = { groups: seedGroups, products: seedProducts, suppliers: seedSuppliers, docs: seedDocs, recipes: seedRecipes, menuCategories: seedCategories, menuItems: seedMenuItems, modifierGroups: seedModifierGroups, tables: seedTables, orders: seedOrders, shifts: seedShifts, tariffs: seedTariffs, directions: seedDirections, services: seedServices, masters: seedMasters, lockers: seedLockers, lockEvents: seedLockEvents, bracelets: seedBracelets, braceletEvents: seedBraceletEvents, shopItems: seedShopItems, inventories: seedInventories, productions: seedProductions, purchaseOrders: seedPurchaseOrders }
+  state = { groups: seedGroups, products: seedProducts, suppliers: seedSuppliers, docs: seedDocs, recipes: seedRecipes, menuCategories: seedCategories, menuItems: seedMenuItems, modifierGroups: seedModifierGroups, tables: seedTables, orders: seedOrders, tableCleanings: seedTableCleanings, shifts: seedShifts, tariffs: seedTariffs, directions: seedDirections, services: seedServices, masters: seedMasters, lockers: seedLockers, lockEvents: seedLockEvents, bracelets: seedBracelets, braceletEvents: seedBraceletEvents, shopItems: seedShopItems, inventories: seedInventories, productions: seedProductions, butcherings: seedButcherings, expenses: seedExpenses, purchaseOrders: seedPurchaseOrders }
   channel?.postMessage('warehouse')
   queryClient.invalidateQueries({ queryKey: ['wh'] })
 }

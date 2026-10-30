@@ -32,7 +32,7 @@ export default function TicketCard({ order, table, items, busy, onStatus, onAll 
       <div className={cn('h-1.5', tone.bar)} />
       <header className="flex items-start justify-between gap-3 px-4 pb-2 pt-3">
         <div>
-          <h3 className="text-xl font-bold text-park-text">{table?.name ?? `Стол ${order.tableId}`}</h3>
+          <h3 className="text-xl font-bold text-park-text">{table?.name ?? `Стол ${order.tableId}`}{order.guestLabel && <span className="text-park-textMuted"> · {order.guestLabel}</span>}</h3>
           <p className="flex items-center gap-2 text-xs text-park-textMuted">
             <span className="flex items-center gap-1"><LuUsers size={12} /> {order.guests}</span>
             <span>№{order.id} · {order.waiter}</span>

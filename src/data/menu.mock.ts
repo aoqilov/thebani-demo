@@ -1,7 +1,15 @@
-import type { ModifierGroup } from '@/types/menu.types'
+import type { ModifierGroup, ModifierOption } from '@/types/menu.types'
+import { seedProducts } from './warehouse.mock'
 
 // Категории и позиции меню строятся из реального меню — см. data/real/catalog.ts
 export { seedCategories, seedMenuItems } from './warehouse.mock'
+
+/** Привязка варианта к складу по названию товара (если такого товара нет — вариант без списания). */
+const stock = (name: string, qty: number, replace?: string): Pick<ModifierOption, 'productId' | 'qty' | 'replaceProductId'> => {
+  const id = seedProducts.find((p) => p.name === name)?.id
+  const rid = replace ? seedProducts.find((p) => p.name === replace)?.id : undefined
+  return id ? { productId: id, qty, replaceProductId: rid } : {}
+}
 
 export const seedModifierGroups: ModifierGroup[] = [
   {
@@ -10,7 +18,7 @@ export const seedModifierGroups: ModifierGroup[] = [
   },
   {
     id: 2, name: 'Добавки', required: false, multiple: true,
-    options: [{ id: 4, name: 'Сыр', price: 15000 }, { id: 5, name: 'Соус', price: 10000 }, { id: 6, name: 'Лаваш', price: 8000 }],
+    options: [{ id: 4, name: 'Сыр', price: 15000, ...stock('Сыр твёрдый', 0.03) }, { id: 5, name: 'Соус', price: 10000 }, { id: 6, name: 'Лаваш', price: 8000 }],
   },
   {
     id: 3, name: 'Острота', required: true, multiple: false,

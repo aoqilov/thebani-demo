@@ -19,7 +19,19 @@ export interface RoleNavItem {
  *  - мобильный/планшет: BottomNav 88px внизу (крупные области нажатия)
  * Контент: max-w-3xl (768px), mobile-first.
  */
-export function RoleShell({ title, nav, headerExtra, wide }: { title: string; nav: RoleNavItem[]; headerExtra?: ReactNode; wide?: boolean }) {
+/** Красный кружок с числом на значке пункта меню. */
+function NavBadge({ n }: { n?: number }) {
+  if (!n) return null
+  return <span className="absolute -right-2.5 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold leading-none text-white">{n > 99 ? '99+' : n}</span>
+}
+
+export function RoleShell({ title, nav, headerExtra, wide, badges, overlay }: {
+  title: string; nav: RoleNavItem[]; headerExtra?: ReactNode; wide?: boolean
+  /** Числа на пунктах меню по их `to` */
+  badges?: Record<string, number>
+  /** Поверх экрана: уведомления и т. п. */
+  overlay?: ReactNode
+}) {
   const { theme, toggle } = useTheme()
   return (
     <div className="min-h-screen bg-park-bg desktop:flex">
@@ -28,7 +40,7 @@ export function RoleShell({ title, nav, headerExtra, wide }: { title: string; na
         <nav className="space-y-1">
           {nav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn('flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium', isActive ? 'bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)]' : 'text-[var(--sidebar-fg-muted)] hover:bg-[var(--sidebar-hover)]')}>
-              <n.icon size={20} /> {n.label}
+              <span className="relative"><n.icon size={20} /><NavBadge n={badges?.[n.to]} /></span> {n.label}
             </NavLink>
           ))}
         </nav>
@@ -61,12 +73,13 @@ export function RoleShell({ title, nav, headerExtra, wide }: { title: string; na
               end={n.end}
               className={({ isActive }) => cn('flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl text-xs font-medium transition active:scale-95', isActive ? 'bg-primary/10 text-primary' : 'text-park-textMuted')}
             >
-              <n.icon size={26} />
+              <span className="relative"><n.icon size={26} /><NavBadge n={badges?.[n.to]} /></span>
               <span>{n.label}</span>
             </NavLink>
           ))}
         </nav>
       </div>
+      {overlay}
     </div>
   )
 }

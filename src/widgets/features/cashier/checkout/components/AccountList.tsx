@@ -22,7 +22,7 @@ export default function AccountList({ orders, tables, selectedId, onSelect }: Pr
   const [scanning, setScanning] = useState(false)
   const [notFound, setNotFound] = useState(false)
 
-  const name = (o: Order) => (o.tableId === null ? 'Без стола' : (tables.find((t) => t.id === o.tableId)?.name ?? `Стол ${o.tableId}`))
+  const name = (o: Order) => (o.tableId === null ? (o.closedTable ? `Был за: ${tables.find((t) => t.id === o.closedTable!.tableId)?.name ?? `стол ${o.closedTable.tableId}`}` : 'Без стола') : `${tables.find((t) => t.id === o.tableId)?.name ?? `Стол ${o.tableId}`}${o.guestLabel ? ` · ${o.guestLabel}` : ''}`)
   const q = search.trim().toLowerCase()
   const rows = orders
     .filter((o) => !q || name(o).toLowerCase().includes(q) || (o.bracelet ?? '').toLowerCase().includes(q))
@@ -68,7 +68,7 @@ export default function AccountList({ orders, tables, selectedId, onSelect }: Pr
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-park-textMuted">
                 <span className="flex items-center gap-1"><LuClock size={12} /> {minutesSince(o.openedAt)} мин</span>
                 <span>{o.guests} чел.</span>
-                {o.tableId !== null && <span>{name(o)}</span>}
+                {(o.tableId !== null || o.closedTable) && <span>{name(o)}</span>}
                 {o.status === 'bill' ? <CusBadge color="warning">счёт запрошен</CusBadge> : <CusBadge color="info">открыт</CusBadge>}
                 {unserved > 0 && <CusBadge color="danger">не подано: {unserved}</CusBadge>}
               </div>

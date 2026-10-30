@@ -42,7 +42,7 @@ export default function FeatureMenu() {
           <ItemsTab items={items} categories={categories} products={products} modifierGroups={modifierGroups} ctx={ctx} categoryId={categoryId} />
         </div>
       )}
-      {tab === 'modifiers' && <ModifiersTab groups={modifierGroups} items={items} />}
+      {tab === 'modifiers' && <ModifiersTab groups={modifierGroups} items={items} products={products} ctx={ctx} />}
       {tab === 'stop' && <StopListTab items={items} ctx={ctx} />}
     </div>
   )

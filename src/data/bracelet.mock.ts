@@ -3,12 +3,12 @@ import type { Bracelet, BraceletEvent, BraceletStatus } from '@/types/bracelet.t
 const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString()
 
 /** Коды, которые уже используются в демо-счетах (см. order.mock.ts). */
-const issued: Record<string, number> = { 'NFC-4F2A91': 1, 'NFC-9C03B7': 2, 'NFC-17D8E2': 3 }
+const issued: Record<string, number> = { 'NFC-4F2A91': 1, 'NFC-9C03B7': 2, 'NFC-17D8E2': 3, 'NFC-1DCB3E': 7, 'NFC-1DEA2D': 8, 'NFC-1E091C': 9 }
 const lost = new Set(['NFC-1A2B3C', 'NFC-1A4A0B'])
 const blocked = new Set(['NFC-1A5964'])
 
 const generated = Array.from({ length: 117 }, (_, i) => `NFC-${(0x1a2b3c + i * 7919).toString(16).toUpperCase().padStart(6, '0')}`)
-const codes = [...Object.keys(issued), ...generated]
+const codes = [...Object.keys(issued), ...generated.filter((c) => !(c in issued))]
 
 const statusOf = (code: string): BraceletStatus => (code in issued ? 'issued' : lost.has(code) ? 'lost' : blocked.has(code) ? 'blocked' : 'free')
 

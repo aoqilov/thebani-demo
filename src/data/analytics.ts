@@ -1,4 +1,4 @@
-import type { Order, PayMethod } from '@/types/order.types'
+import type { Order, OrderItem, PayMethod } from '@/types/order.types'
 
 export const startOfToday = () => new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
 
@@ -47,16 +47,19 @@ export interface ItemStat {
   name: string
   qty: number
   revenue: number
+  /** Себестоимость модификаторов, сум (если передана функция расчёта) */
+  modsCost: number
 }
 
 /** Самые продаваемые позиции кухни и бара по выручке. */
-export function topItems(orders: Order[]): ItemStat[] {
+export function topItems(orders: Order[], modsCost?: (i: OrderItem) => number): ItemStat[] {
   const m = new Map<number, ItemStat>()
   for (const o of orders) {
     for (const i of o.items) {
-      const cur = m.get(i.menuItemId) ?? { menuItemId: i.menuItemId, name: i.name, qty: 0, revenue: 0 }
+      const cur = m.get(i.menuItemId) ?? { menuItemId: i.menuItemId, name: i.name, qty: 0, revenue: 0, modsCost: 0 }
       cur.qty += i.qty
       cur.revenue += i.unitPrice * i.qty
+      if (modsCost) cur.modsCost += modsCost(i) * i.qty
       m.set(i.menuItemId, cur)
     }
   }

@@ -21,14 +21,24 @@ export default function MenuGrid({ categories, items, ctx, counts, onPick }: Pro
   const [cat, setCat] = useState<number | 'all'>('all')
   const [search, setSearch] = useState('')
 
-  const rows = useMemo(() => {
+  /** Разделы меню в порядке категорий; внутри раздела блюда в порядке меню, позиции в стопе — в конце раздела. */
+  const sections = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return items
-      .filter((i) => i.active && (cat === 'all' || i.categoryId === cat) && (!q || i.name.toLowerCase().includes(q)))
-      .map((i) => ({ item: i, state: itemState(i, ctx) as ItemState }))
-      // позиции в стопе уходят вниз
-      .sort((a, b) => Number(b.state.sellable) - Number(a.state.sellable))
-  }, [items, ctx, cat, search])
+    const order = [...categories].sort((a, b) => a.sort - b.sort)
+    const visible = items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.active && (cat === 'all' || item.categoryId === cat) && (!q || item.name.toLowerCase().includes(q)))
+      .map(({ item, index }) => ({ item, index, state: itemState(item, ctx) as ItemState }))
+    return order
+      .map((category) => ({
+        category,
+        rows: visible
+          .filter((r) => r.item.categoryId === category.id)
+          .sort((a, b) => Number(b.state.sellable) - Number(a.state.sellable) || a.index - b.index),
+      }))
+      .filter((sec) => sec.rows.length > 0)
+  }, [items, categories, ctx, cat, search])
+  const total = sections.reduce((s, sec) => s + sec.rows.length, 0)
 
   const chip = (active: boolean) =>
     cn('shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition active:scale-95', active ? 'bg-primary text-white' : 'bg-park-bgCard text-park-text3 shadow-card hover:bg-park-bgHover')
@@ -42,7 +52,14 @@ export default function MenuGrid({ categories, items, ctx, counts, onPick }: Pro
         {categories.map((c) => <button key={c.id} className={chip(cat === c.id)} onClick={() => setCat(c.id)}>{c.name}</button>)}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 wide:grid-cols-4">
+      {sections.map(({ category, rows }) => (
+        <section key={category.id} className="space-y-3">
+          {cat === 'all' && (
+            <h2 className="flex items-baseline gap-2 pt-1 text-base font-bold text-park-text">
+              {category.name}<span className="text-xs font-normal text-park-textMuted">{rows.length}</span>
+            </h2>
+          )}
+          <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 wide:grid-cols-4">
         {rows.map(({ item, state }) => {
           const added = counts.get(item.id) ?? 0
           const stop = !state.sellable
@@ -74,8 +91,10 @@ export default function MenuGrid({ categories, items, ctx, counts, onPick }: Pro
             </button>
           )
         })}
-      </div>
-      {rows.length === 0 && <p className="py-10 text-center text-sm text-park-textMuted">Ничего не найдено</p>}
+          </div>
+        </section>
+      ))}
+      {total === 0 && <p className="py-10 text-center text-sm text-park-textMuted">Ничего не найдено</p>}
     </div>
   )
 }

@@ -19,10 +19,30 @@ export const ITEM_STATUS_LABEL: Record<OrderItemStatus, string> = {
   served: 'Подано',
 }
 
+/** Отменённая позиция: убирается из счёта, но остаётся в журнале с причиной. */
+export interface CancelledItem {
+  id: number
+  menuItemId: number
+  name: string
+  qty: number
+  unitPrice: number
+  station: Station
+  /** На каком этапе была позиция в момент отмены */
+  wasStatus: OrderItemStatus
+  reason: string
+  by: string
+  /** ISO */
+  at: string
+}
+
 export interface OrderItemMod {
   group: string
   option: string
   price: number
+  /** Списание со склада — копия настроек варианта на момент заказа */
+  productId?: number
+  qty?: number
+  replaceProductId?: number
 }
 
 export interface OrderItem {
@@ -99,10 +119,16 @@ export interface Order {
   durationMin: number
   /** NFC-браслет гостя, на который идёт счёт */
   bracelet: string | null
+  /** Стол закрыт официантом (гости поели и ушли), а счёт остаётся открытым до оплаты на кассе */
+  closedTable?: { tableId: number; at: string; by: string }
+  /** Счёт на конкретного гостя за общим столом («Гость 1»). Нет — счёт на весь стол */
+  guestLabel?: string
   waiter: string
   status: OrderStatus
   openedAt: string
   items: OrderItem[]
+  /** Отменённые позиции (журнал) */
+  cancelled?: CancelledItem[]
   charges: Charge[]
   closedAt?: string
   payment?: Payment
@@ -137,3 +163,30 @@ export interface DraftLine {
 export const orderTotal = (o: Pick<Order, 'items'>) => o.items.reduce((s, i) => s + i.unitPrice * i.qty, 0)
 export const chargesTotal = (o: Pick<Order, 'charges'>) => o.charges.reduce((s, c) => s + c.amount, 0)
 export const draftTotal = (lines: DraftLine[]) => lines.reduce((s, l) => s + l.unitPrice * l.qty, 0)
+
+/** Счёт стола на момент закрытия: что заказывали (для истории закрытых столов). */
+export interface TableCleaningBill {
+  orderId: number
+  /** «Гость 1» и т. п.; нет — счёт на весь стол */
+  label?: string
+  total: number
+  items: { name: string; qty: number }[]
+  cancelled: number
+}
+
+/**
+ * Закрытие стола официантом. Пока `cleanedAt` пустой — стол ждёт уборки и занять его нельзя.
+ * Запись остаётся в истории и после уборки.
+ */
+export interface TableCleaning {
+  id: number
+  tableId: number
+  guests: number
+  bills: TableCleaningBill[]
+  total: number
+  /** ISO */
+  closedAt: string
+  closedBy: string
+  cleanedAt?: string
+  cleanedBy?: string
+}

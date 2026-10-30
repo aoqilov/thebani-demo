@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { LuArrowLeft, LuNfc, LuReceipt, LuUsers } from 'react-icons/lu'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { LuArrowLeft, LuDoorClosed, LuNfc, LuReceipt, LuUserPlus, LuUsers } from 'react-icons/lu'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CusAlert } from '@/components/ui/alert/CusAlert'
 import { CusBadge } from '@/components/ui/badge/CusBadge'
 import { CusButton } from '@/components/ui/buttons/CusButton'
 import { CusDrawer } from '@/components/ui/dialog/CusDrawer'
+import { CusChip } from '@/components/ui/toolbar/CusToolbar'
 import type { MenuItem } from '@/types/menu.types'
 import { draftTotal, orderTotal, type DraftLine, type OrderItemMod } from '@/types/order.types'
 import { fmtMoney } from '@/utils/format'
@@ -13,6 +14,8 @@ import { useCostCtx } from '../../admin/warehouse-recipes/components/useCostCtx'
 import { useOrders, useSendItems, useTables } from '../hooks/useOrders'
 import MenuGrid from './components/MenuGrid'
 import OrderPanel from './components/OrderPanel'
+import ModalOpenTable from '../tables/components/ModalOpenTable'
+import ModalCloseTable from './modals/ModalCloseTable'
 import ModifierSheet from './modals/ModifierSheet'
 
 const lineKey = (id: number, mods: OrderItemMod[], comment: string) => `${id}|${mods.map((m) => `${m.group}:${m.option}`).join(',')}|${comment}`
@@ -20,6 +23,7 @@ const lineKey = (id: number, mods: OrderItemMod[], comment: string) => `${id}|${
 export default function FeatureWaiterTableOrder() {
   const navigate = useNavigate()
   const tableId = Number(useParams().tableId)
+  const [search, setSearch] = useSearchParams()
   const { data: tables = [], isLoading: l1 } = useTables()
   const { data: orders = [], isLoading: l2 } = useOrders()
   const { data: categories = [] } = useMenuCategories()
@@ -28,14 +32,22 @@ export default function FeatureWaiterTableOrder() {
   const { ctx } = useCostCtx()
   const send = useSendItems()
 
-  const [draft, setDraft] = useState<DraftLine[]>([])
+  // Черновик у каждого счёта свой: официант может переключаться между гостями стола
+  const [drafts, setDrafts] = useState<Record<number, DraftLine[]>>({})
+  const [addingGuest, setAddingGuest] = useState(false)
+  const [closing, setClosing] = useState(false)
   const [sheet, setSheet] = useState<MenuItem | null>(null)
   const [cart, setCart] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
   const table = tables.find((t) => t.id === tableId)
-  const order = orders.find((o) => o.tableId === tableId)
+  const tableOrders = orders.filter((o) => o.tableId === tableId).sort((a, b) => a.id - b.id)
+  const order = tableOrders.find((o) => o.id === Number(search.get('o'))) ?? tableOrders[0]
+  const draft = (order && drafts[order.id]) || []
+  const setDraft = (fn: (d: DraftLine[]) => DraftLine[]) => order && setDrafts((all) => ({ ...all, [order.id]: fn(all[order.id] ?? []) }))
+  const wholeTable = tableOrders.some((o) => !o.guestLabel)
+  const canAddGuest = !!table && !wholeTable
 
   const counts = useMemo(() => {
     const m = new Map<number, number>()
@@ -72,7 +84,7 @@ export default function FeatureWaiterTableOrder() {
     setError(null)
     try {
       await send.mutateAsync({ orderId: order!.id, lines: draft })
-      setDraft([])
+      setDraft(() => [])
       setCart(false)
       setNotice('Заказ отправлен на кухню и в бар.')
       setTimeout(() => setNotice(null), 3500)
@@ -92,15 +104,28 @@ export default function FeatureWaiterTableOrder() {
       <div className="flex flex-wrap items-center gap-3">
         <CusButton variant="ghost" leftIcon={<LuArrowLeft size={18} />} onClick={() => navigate('/waiter')}>Столы</CusButton>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold text-park-text">{table.name}</h1>
+          <h1 className="truncate text-xl font-bold text-park-text">{table.name}{order.guestLabel && <span className="text-park-textMuted"> · {order.guestLabel}</span>}</h1>
           <p className="flex flex-wrap items-center gap-3 text-xs text-park-textMuted">
-            <span className="flex items-center gap-1"><LuUsers size={12} /> {order.guests} гост.</span>
+            <span className="flex items-center gap-1"><LuUsers size={12} /> {order.guestLabel ? '1 гость' : `${order.guests} гост.`}</span>
             {order.bracelet && <span className="flex items-center gap-1 font-mono"><LuNfc size={12} /> {order.bracelet}</span>}
             <span>{order.waiter}</span>
           </p>
         </div>
         {order.status === 'bill' && <CusBadge color="warning">Счёт запрошен</CusBadge>}
+        <CusButton variant="outline" color="success" leftIcon={<LuDoorClosed size={18} />} onClick={() => setClosing(true)}>Закрыть стол</CusButton>
       </div>
+
+      {/* Счета стола: общий или по гостям */}
+      {(tableOrders.length > 1 || order.guestLabel || canAddGuest) && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {tableOrders.map((o) => (
+            <CusChip key={o.id} active={o.id === order.id} onClick={() => setSearch({ o: String(o.id) }, { replace: true })}>
+              {o.guestLabel ?? 'Весь стол'} · {fmtMoney(orderTotal(o))}
+            </CusChip>
+          ))}
+          {canAddGuest && <CusButton size="sm" variant="outline" leftIcon={<LuUserPlus size={15} />} onClick={() => setAddingGuest(true)}>Гость</CusButton>}
+        </div>
+      )}
 
       {order.status === 'bill' && <CusAlert color="warning">Счёт запрошен. Новые позиции можно добавить, пока кассир не закрыл счёт.</CusAlert>}
 
@@ -116,10 +141,12 @@ export default function FeatureWaiterTableOrder() {
         </CusButton>
       </div>
       <div className="desktop:hidden">
-        <CusDrawer open={cart} onClose={() => setCart(false)} title={`${table.name} — заказ`}>{panel}</CusDrawer>
+        <CusDrawer open={cart} onClose={() => setCart(false)} title={`${table.name}${order.guestLabel ? ` · ${order.guestLabel}` : ''} — заказ`}>{panel}</CusDrawer>
       </div>
 
-      <ModifierSheet item={sheet} groups={groups} onClose={() => setSheet(null)} onAdd={addLine} />
+      <ModalCloseTable open={closing} table={table} orders={tableOrders} drafts={drafts} onClose={() => setClosing(false)} onClosed={() => { setClosing(false); navigate('/waiter/closed') }} />
+      <ModalOpenTable table={addingGuest ? table : null} forceMode="guest" onClose={() => setAddingGuest(false)} onOpened={(o) => { setAddingGuest(false); setSearch({ o: String(o.id) }, { replace: true }) }} />
+      <ModifierSheet item={sheet} groups={groups} ctx={ctx} onClose={() => setSheet(null)} onAdd={addLine} />
     </div>
   )
 }

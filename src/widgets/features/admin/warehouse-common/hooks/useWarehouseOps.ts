@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  deleteInventory, deleteProduction, deletePurchaseOrder, fetchInventories, fetchInventory, fetchProduction, fetchProductions,
+  deleteButchering, deleteInventory, deleteProduction, fetchButchering, fetchButcherings, postButchering, saveButchering, unpostButchering,
+  deletePurchaseOrder, fetchInventories, fetchInventory, fetchProduction, fetchProductions,
   fetchPurchaseOrder, fetchPurchaseOrders, postInventory, postProduction, receivePurchaseOrder, saveInventory, saveProduction,
   savePurchaseOrder, sendPurchaseOrder, unpostInventory, unpostProduction,
 } from '@/api/warehouse/ops.api'
@@ -32,3 +33,10 @@ export const useSavePurchaseOrder = () => useMutation({ mutationFn: savePurchase
 export const useSendPurchaseOrder = () => useMutation({ mutationFn: sendPurchaseOrder, onSuccess: useDone() })
 export const useReceivePurchaseOrder = () => useMutation({ mutationFn: receivePurchaseOrder, onSuccess: useDone() })
 export const useDeletePurchaseOrder = () => useMutation({ mutationFn: deletePurchaseOrder, onSuccess: useDone() })
+
+export const useButcherings = () => useQuery({ queryKey: ['wh', 'butcherings'], queryFn: fetchButcherings })
+export const useButchering = (id: number | null) => useQuery({ queryKey: ['wh', 'butchering', id], queryFn: () => fetchButchering(id!), enabled: id !== null })
+export const useSaveButchering = () => useMutation({ mutationFn: saveButchering, onSuccess: useDone() })
+export const usePostButchering = () => useMutation({ mutationFn: postButchering, onSuccess: useDone() })
+export const useUnpostButchering = () => useMutation({ mutationFn: unpostButchering, onSuccess: useDone() })
+export const useDeleteButchering = () => useMutation({ mutationFn: deleteButchering, onSuccess: useDone() })

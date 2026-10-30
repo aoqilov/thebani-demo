@@ -4,10 +4,13 @@ import { CusCard, CusCardHeader } from '@/components/shared/card/CusCard'
 import { CusBadge } from '@/components/ui/badge/CusBadge'
 import { CusButton } from '@/components/ui/buttons/CusButton'
 import type { MenuItem, ModifierGroup } from '@/types/menu.types'
+import { modAvailability, modCost } from '@/data/menu.calc'
+import type { CostCtx } from '@/data/recipe.calc'
+import type { Product } from '@/types/warehouse.types'
 import { fmtMoney } from '@/utils/format'
 import ModalModifierGroup from '../modals/ModalModifierGroup'
 
-export default function ModifiersTab({ groups, items }: { groups: ModifierGroup[]; items: MenuItem[] }) {
+export default function ModifiersTab({ groups, items, products, ctx }: { groups: ModifierGroup[]; items: MenuItem[]; products: Product[]; ctx: CostCtx }) {
   const [editing, setEditing] = useState<ModifierGroup | null>(null)
   const [open, setOpen] = useState(false)
 
@@ -34,7 +37,10 @@ export default function ModifiersTab({ groups, items }: { groups: ModifierGroup[
                 <ul className="divide-y divide-park-border text-sm">
                   {g.options.map((o) => (
                     <li key={o.id} className="flex items-center justify-between py-1.5">
-                      <span className="text-park-text3">{o.name}</span>
+                      <span className="text-park-text3">
+                        {o.name}
+                        {o.productId && <span className="block text-xs text-park-textMuted">Склад: {o.replaceProductId ? `${products.find((p) => p.id === o.replaceProductId)?.name ?? '?'} → ` : '+ '}{products.find((p) => p.id === o.productId)?.name ?? '?'} · {o.qty} {products.find((p) => p.id === o.productId)?.unit}{!o.replaceProductId && ` · себестоимость ${fmtMoney(Math.round(modCost(o, ctx)))}`}{!modAvailability(o, ctx).available && <span className="ml-1 font-semibold text-danger">· стоп: {modAvailability(o, ctx).reason}</span>}</span>}
+                      </span>
                       <span className="text-park-textMuted">{o.price > 0 ? `+${fmtMoney(o.price)}` : 'бесплатно'}</span>
                     </li>
                   ))}
@@ -45,7 +51,7 @@ export default function ModifiersTab({ groups, items }: { groups: ModifierGroup[
         })}
       </div>
       {!groups.length && <CusCard className="p-8 text-center text-sm text-park-textMuted">Групп модификаторов пока нет.</CusCard>}
-      <ModalModifierGroup open={open} onClose={() => setOpen(false)} group={editing} />
+      <ModalModifierGroup open={open} onClose={() => setOpen(false)} group={editing} products={products} />
     </div>
   )
 }

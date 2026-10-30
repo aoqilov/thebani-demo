@@ -67,6 +67,7 @@ export const roleApps: RoleAppDef[] = [
     screens: [
       { path: '', label: 'Столы', icon: LuUtensils },
       { path: 'orders', label: 'Заказы', icon: LuClipboardList },
+      { path: 'closed', label: 'Закрытые', icon: LuHistory },
       { path: 'profile', label: 'Профиль', icon: LuUser },
     ],
   },

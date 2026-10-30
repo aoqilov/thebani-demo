@@ -1,4 +1,5 @@
 import type { MenuItem } from '@/types/menu.types'
+import type { Recipe } from '@/types/warehouse.types'
 import { capacity, recipeStats, unitCost, type CostCtx } from './recipe.calc'
 
 export type Availability = 'ok' | 'low' | 'stop-manual' | 'stop-auto' | 'norecipe' | 'hidden'
@@ -48,6 +49,41 @@ export function itemState(item: MenuItem, ctx: CostCtx): ItemState {
   if (qty <= 0) return { ...base, status: 'stop-auto', portions: 0, reason: 'Нет на складе', sellable: false }
   const low = qty < (product?.minStock ?? 0)
   return { ...base, status: low ? 'low' : 'ok', portions: Math.floor(qty), reason: low ? 'Заканчивается' : '', sellable: true }
+}
+
+/** Складская привязка модификатора (и у варианта в настройках, и у выбранного в заказе). */
+export interface ModStock {
+  productId?: number
+  qty?: number
+  replaceProductId?: number
+}
+
+/** Хватает ли на складе на одну порцию модификатора. Заготовку и блюдо можно приготовить — их проверяем мягче. */
+export function modAvailability(m: ModStock, ctx: CostCtx): { available: boolean; reason: string } {
+  if (!m.productId || !m.qty) return { available: true, reason: '' }
+  const p = ctx.products.get(m.productId)
+  if (!p) return { available: true, reason: '' }
+  const have = ctx.stock.get(m.productId)?.qty ?? 0
+  if (p.kind === 'goods') return have >= m.qty ? { available: true, reason: '' } : { available: false, reason: `Нет на складе: ${p.name}` }
+  if (p.kind === 'prep' && have >= m.qty) return { available: true, reason: '' }
+  const r = ctx.recipes.get(m.productId)
+  if (!r) return { available: false, reason: `Нет тех. карты: ${p.name}` }
+  const cap = capacity(r, ctx).portions
+  return cap === null || cap >= m.qty ? { available: true, reason: '' } : { available: false, reason: `Нет на складе: ${p.name}` }
+}
+
+/**
+ * Себестоимость модификатора на одну порцию блюда: + товар модификатора − заменённый ингредиент.
+ * Заменённый ингредиент считаем, только если передана тех. карта блюда.
+ */
+export function modCost(m: ModStock, ctx: CostCtx, baseRecipe?: Recipe): number {
+  if (!m.productId || !m.qty) return 0
+  let cost = m.qty * unitCost(m.productId, ctx)
+  if (m.replaceProductId && baseRecipe && baseRecipe.outputQty > 0) {
+    const line = baseRecipe.lines.find((l) => l.productId === m.replaceProductId)
+    if (line) cost -= (line.gross / baseRecipe.outputQty) * unitCost(line.productId, ctx)
+  }
+  return cost
 }
 
 export const AVAILABILITY_LABEL: Record<Availability, string> = {

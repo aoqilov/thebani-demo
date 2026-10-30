@@ -7,7 +7,7 @@ import { CusBadge } from '@/components/ui/badge/CusBadge'
 import { CusTable, type ColumnDef } from '@/components/ui/table/CusTable'
 import { CusChip } from '@/components/ui/toolbar/CusToolbar'
 import { STRUCTURE_LABEL, byHour, closedToday, methodTotals, structure, sum, topItems, type ItemStat, type Structure } from '@/data/analytics'
-import { itemState } from '@/data/menu.calc'
+import { itemState, modCost } from '@/data/menu.calc'
 import { foodCostColor } from '@/data/recipe.calc'
 import { PAY_METHOD_LABEL, type PayMethod } from '@/types/order.types'
 import { fmtMoney } from '@/utils/format'
@@ -32,9 +32,12 @@ export default function FeatureReportsFinance() {
   const struct = structure(orders)
   const methods = methodTotals(orders)
 
-  const items: Row[] = useMemo(() => topItems(orders).map((s) => {
+  const items: Row[] = useMemo(() => topItems(orders, (i) => {
+    const recipe = ctx.recipes.get(menu.find((x) => x.id === i.menuItemId)?.productId ?? -1)
+    return i.mods.reduce((a, m) => a + modCost(m, ctx, recipe), 0)
+  }).map((s) => {
     const m = menu.find((x) => x.id === s.menuItemId)
-    const cost = m ? itemState(m, ctx).cost * s.qty : 0
+    const cost = m ? itemState(m, ctx).cost * s.qty + s.modsCost : 0
     return { ...s, id: s.menuItemId, cost, foodCost: cost > 0 && s.revenue > 0 ? (cost / s.revenue) * 100 : null }
   }), [orders, menu, ctx])
 

@@ -1,4 +1,4 @@
-import type { DocLine, Inventory, Product, ProductGroup, ProductKind, Production, PurchaseOrder, Recipe, Supplier, Unit, WarehouseDoc } from '@/types/warehouse.types'
+import type { Butchering, DocLine, Inventory, Product, ProductGroup, ProductKind, Production, PurchaseOrder, Recipe, Supplier, Unit, WarehouseDoc } from '@/types/warehouse.types'
 import { buildCatalog } from './real/catalog'
 import { buildStock } from './warehouse.calc'
 
@@ -28,6 +28,7 @@ const ingredientRows: Row[] = [
   [5, 'Томатная паста', 'кг', 5, 25000], [5, 'Зира', 'кг', 1, 150000],
   [7, 'Бульон говяжий', 'л', 10, 0, 'prep'], [7, 'Тесто', 'кг', 5, 0, 'prep'], [7, 'Зажарка', 'кг', 3, 0, 'prep'],
   [8, 'Салфетки', 'упак', 20, 6000], [8, 'Перчатки одноразовые', 'упак', 10, 18000], [8, 'Моющее средство', 'л', 5, 22000],
+  [2, 'Курица тушка', 'кг', 10, 32000], [2, 'Куриные кости и крылья', 'кг', 3, 9000],
 ]
 
 const base: Product[] = ingredientRows.map(([groupId, name, unit, minStock, , kind], i) => ({
@@ -141,6 +142,16 @@ export const seedInventories: Inventory[] = [
 
 export const seedProductions: Production[] = [
   { id: 1, number: 'ПЗ-000001', date: '2026-10-27', status: 'draft', comment: 'Бульон на день', lines: [{ productId: nameId('Бульон говяжий'), qty: 10 }], docIds: [] },
+]
+
+export const seedButcherings: Butchering[] = [
+  {
+    id: 1, number: 'РЗ-000001', date: '2026-10-27', status: 'draft', comment: 'Разделка тушек на день', inputProductId: nameId('Курица тушка'), inputQty: 10, docIds: [],
+    outputs: [
+      { productId: nameId('Куриное филе'), qty: 6, sharePct: 70 },
+      { productId: nameId('Куриные кости и крылья'), qty: 3, sharePct: 25 },
+    ],
+  },
 ]
 
 const orderLines = (items: Array<[string, number]>): DocLine[] => items.map(([n, qty]) => { const id = nameId(n); return { productId: id, qty, price: buy(id) } })

@@ -1,5 +1,7 @@
 import type { IconType } from 'react-icons'
 import {
+  LuShoppingBasket, LuWallet, LuArrowLeftRight, LuChefHat, LuUserCheck,
+  LuSplit,
   LuActivity, LuBadgeDollarSign, LuBed, LuCalendarCheck, LuChartBar, LuChartLine, LuClipboardList, LuFileInput,
   LuFileOutput, LuHandHelping, LuHistory, LuKeyRound, LuLayoutDashboard, LuLifeBuoy, LuMonitorPlay, LuNfc, LuPackage, LuPalette,
   LuPercent, LuSettings, LuTags, LuUsers, LuUtensils, LuWarehouse, LuBookOpen, LuUserCog, LuClipboardCheck, LuShapes,
@@ -59,6 +61,11 @@ export const navGroups: NavGroupDef[] = [
         icon: LuChartBar,
         subItems: [
           { labelKey: 'reportsFinance', icon: LuChartLine, to: '/reports/finance', roles: G.FINANCE },
+          { labelKey: 'reportsPnl', icon: LuScale, to: '/reports/pnl', roles: G.FINANCE, badge: 'new' },
+          { labelKey: 'reportsCashflow', icon: LuArrowLeftRight, to: '/reports/cashflow', roles: G.FINANCE, badge: 'new' },
+          { labelKey: 'reportsMenu', icon: LuChefHat, to: '/reports/menu', roles: G.FINANCE, badge: 'new' },
+          { labelKey: 'reportsStaff', icon: LuUserCheck, to: '/reports/staff', roles: G.FINANCE, badge: 'new' },
+          { labelKey: 'reportsExpenses', icon: LuWallet, to: '/reports/expenses', roles: G.FINANCE, badge: 'new' },
           { labelKey: 'reportsShifts', icon: LuClipboardCheck, to: '/reports/shifts', roles: G.FINANCE_SHIFT },
           { labelKey: 'reportsServices', icon: LuHandHelping, to: '/reports/services', roles: G.SERVICES },
         ],
@@ -95,6 +102,8 @@ export const navGroups: NavGroupDef[] = [
           { labelKey: 'warehouseRecipes', icon: LuClipboardList, to: '/warehouse/recipes', roles: G.STOCK },
           { labelKey: 'warehouseInventory', icon: LuClipboardCheck, to: '/warehouse/inventory', roles: G.STOCK, badge: 'new' },
           { labelKey: 'warehouseProduction', icon: LuCookingPot, to: '/warehouse/production', roles: G.STOCK, badge: 'new' },
+          { labelKey: 'warehouseButchering', icon: LuSplit, to: '/warehouse/butchering', roles: G.STOCK, badge: 'new' },
+          { labelKey: 'warehousePurchases', icon: LuShoppingBasket, to: '/warehouse/purchases', roles: G.STOCK, badge: 'new' },
           { labelKey: 'warehouseOrders', icon: LuTruck, to: '/warehouse/orders', roles: G.STOCK, badge: 'new' },
           { labelKey: 'warehouseSuppliers', icon: LuHandshake, to: '/warehouse/suppliers', roles: G.STOCK, badge: 'new' },
           { labelKey: 'warehouseTurnover', icon: LuTable2, to: '/warehouse/turnover', roles: G.STOCK, badge: 'new' },

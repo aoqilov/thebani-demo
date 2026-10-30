@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  deleteDoc, deleteProduct, deleteRecipe, deleteSupplier, fetchDoc, fetchDocs, fetchGroups, fetchMovements, fetchProducts, fetchRecipes, fetchStock, fetchSuppliers,
-  postDoc, saveDoc, saveProduct, saveRecipe, saveSupplier, unpostDoc,
+  deleteDoc, deleteGroup, deleteProduct, deleteRecipe, deleteSupplier, fetchDoc, fetchDocs, fetchGroups, fetchMovements, fetchProducts, fetchRecipes, fetchStock, fetchSuppliers,
+  postDoc, restoreProduct, saveDoc, saveGroup, saveProduct, saveRecipe, saveSupplier, unpostDoc,
 } from '@/api/warehouse/warehouse.api'
 import type { DocType } from '@/types/warehouse.types'
 
@@ -27,6 +27,18 @@ export function useSaveProduct() {
 export function useDeleteProduct() {
   const done = useInvalidateAll()
   return useMutation({ mutationFn: deleteProduct, onSuccess: done })
+}
+export function useSaveGroup() {
+  const done = useInvalidateAll()
+  return useMutation({ mutationFn: saveGroup, onSuccess: done })
+}
+export function useDeleteGroup() {
+  const done = useInvalidateAll()
+  return useMutation({ mutationFn: deleteGroup, onSuccess: done })
+}
+export function useRestoreProduct() {
+  const done = useInvalidateAll()
+  return useMutation({ mutationFn: restoreProduct, onSuccess: done })
 }
 export function useSaveDoc() {
   const done = useInvalidateAll()

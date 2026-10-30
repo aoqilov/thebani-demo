@@ -12,6 +12,12 @@ export interface ModifierOption {
   name: string
   /** Доплата, сум (0 — бесплатно) */
   price: number
+  /** Что списывать со склада при выборе варианта (товар или заготовка) */
+  productId?: number
+  /** Сколько списывать на одну порцию блюда, в единицах товара */
+  qty?: number
+  /** Ингредиент основной тех. карты, который вариант заменяет (он не списывается) */
+  replaceProductId?: number
 }
 
 export interface ModifierGroup {
