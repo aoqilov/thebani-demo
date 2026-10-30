@@ -134,7 +134,14 @@ const invOverDoc: WarehouseDoc = {
   lines: invLines.filter((l) => l.fact > l.expected).map((l): DocLine => ({ productId: l.productId, qty: r3(l.fact - l.expected), price: Math.round(l.cost) })),
 }
 
-export const seedDocs: WarehouseDoc[] = [...baseDocs, invShortDoc, invOverDoc]
+// Ещё списания в разные дни, чтобы в отчёте о потерях было что сравнивать
+const lossDocs: WarehouseDoc[] = [
+  { id: 9, type: 'expense', number: 'СП-000004', date: '2026-10-27', status: 'posted', supplierId: null, reason: 'Брак', comment: 'Разбиты при приёмке', lines: [out('Яйца куриные', 12), out('Сметана 20%', 2)] },
+  { id: 10, type: 'expense', number: 'СП-000005', date: '2026-10-28', status: 'posted', supplierId: null, reason: 'Порча', comment: 'Истёк срок годности', lines: [out('Зелень (укроп, кинза)', 1.2), out('Грибы шампиньоны', 1.5), out('Говядина вырезка', 0.8)] },
+  { id: 11, type: 'expense', number: 'СП-000006', date: '2026-10-29', status: 'posted', supplierId: null, reason: 'Прочее', comment: 'Пролили масло при уборке', lines: [out('Масло подсолнечное', 2)] },
+]
+
+export const seedDocs: WarehouseDoc[] = [...baseDocs, invShortDoc, invOverDoc, ...lossDocs]
 
 export const seedInventories: Inventory[] = [
   { id: 1, number: 'ИН-000001', date: INV_DATE, status: 'posted', comment: 'Еженедельная инвентаризация', lines: invLines, docIds: [7, 8] },

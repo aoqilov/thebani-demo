@@ -1,6 +1,6 @@
 import type { IconType } from 'react-icons'
 import {
-  LuShoppingBasket, LuWallet, LuArrowLeftRight, LuChefHat, LuUserCheck,
+  LuShoppingBasket, LuTrash2, LuWallet, LuArrowLeftRight, LuChefHat, LuUserCheck,
   LuSplit,
   LuActivity, LuBadgeDollarSign, LuBed, LuCalendarCheck, LuChartBar, LuChartLine, LuClipboardList, LuFileInput,
   LuFileOutput, LuHandHelping, LuHistory, LuKeyRound, LuLayoutDashboard, LuLifeBuoy, LuMonitorPlay, LuNfc, LuPackage, LuPalette,
@@ -61,6 +61,7 @@ export const navGroups: NavGroupDef[] = [
         icon: LuChartBar,
         subItems: [
           { labelKey: 'reportsFinance', icon: LuChartLine, to: '/reports/finance', roles: G.FINANCE },
+          { labelKey: 'reportsLosses', icon: LuTrash2, to: '/reports/losses', roles: G.STOCK, badge: 'new' },
           { labelKey: 'reportsPnl', icon: LuScale, to: '/reports/pnl', roles: G.FINANCE, badge: 'new' },
           { labelKey: 'reportsCashflow', icon: LuArrowLeftRight, to: '/reports/cashflow', roles: G.FINANCE, badge: 'new' },
           { labelKey: 'reportsMenu', icon: LuChefHat, to: '/reports/menu', roles: G.FINANCE, badge: 'new' },

@@ -159,7 +159,16 @@ function historyOrders(): Order[] {
       const cashier = day > 10 && rnd() < 0.2 ? 'Отабек Назаров' : pick(['Мария Козлова', 'Мария Козлова', 'Нигора Юлдашева', 'Фарход Содиков', 'Фарход Содиков'])
       const discount = rnd() < (cashier === 'Фарход Содиков' ? 0.45 : 0.08) ? 50000 + Math.floor(rnd() * 3) * 50000 : 0
       const waiter = pick(['Игорь Волков', 'Мадина Орипова', 'Азамат Тошматов', 'Севара Рахмонова', 'Руслан Ким', 'Севара Рахмонова'])
-      out.push(closed(id++, 1 + Math.floor(rnd() * 12), guests, dishes, charges, [[pick<PayMethod>(['cash', 'uzcard', 'humo']), 'rest']], minAgo, discount, dishes.length > 0, { cashier, waiter }))
+      const order = closed(id++, 1 + Math.floor(rnd() * 12), guests, dishes, charges, [[pick<PayMethod>(['cash', 'uzcard', 'humo']), 'rest']], minAgo, discount, dishes.length > 0, { cashier, waiter })
+      // Иногда официант отменял блюдо, когда кухня уже готовила или оно было готово
+      if (dishes.length && rnd() < 0.15) {
+        const d = pick(dishes)
+        order.cancelled = [{
+          id: 1, menuItemId: d.menuItemId, name: d.name, qty: 1, unitPrice: d.unitPrice, station: d.station,
+          wasStatus: rnd() < 0.5 ? 'ready' : 'cooking', reason: pick(['Ошибка при вводе', 'Гость передумал', 'Долго ждал']), by: waiter, at: ago(minAgo + 30),
+        }]
+      }
+      out.push(order)
     }
   }
   return out

@@ -47,7 +47,7 @@ export interface WarehouseState {
   purchaseOrders: PurchaseOrder[]
 }
 
-const KEY = 'thebani_warehouse_v21'
+const KEY = 'thebani_warehouse_v22'
 
 function load(): WarehouseState | null {
   try {

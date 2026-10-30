@@ -30,6 +30,7 @@ const ReportsShifts = lazy(() => import('@/pages/admin/main/ReportsShifts'))
 const ReportsCashflow = lazy(() => import('@/pages/admin/main/ReportsCashflow'))
 const ReportsMenu = lazy(() => import('@/pages/admin/main/ReportsMenu'))
 const ReportsStaff = lazy(() => import('@/pages/admin/main/ReportsStaff'))
+const ReportsLosses = lazy(() => import('@/pages/admin/main/ReportsLosses'))
 const ReportsPnl = lazy(() => import('@/pages/admin/main/ReportsPnl'))
 const AccountingExpenses = lazy(() => import('@/pages/admin/main/AccountingExpenses'))
 const ReportsServices = lazy(() => import('@/pages/admin/main/ReportsServices'))
@@ -106,6 +107,7 @@ export const routes: RouteObject[] = [
       { path: '/reports/cashflow', element: rg(<ReportsCashflow />, RoleGroups.FINANCE) },
       { path: '/reports/menu', element: rg(<ReportsMenu />, RoleGroups.FINANCE) },
       { path: '/reports/staff', element: rg(<ReportsStaff />, RoleGroups.FINANCE) },
+      { path: '/reports/losses', element: rg(<ReportsLosses />, RoleGroups.STOCK) },
       { path: '/reports/pnl', element: rg(<ReportsPnl />, RoleGroups.FINANCE) },
       { path: '/reports/expenses', element: rg(<AccountingExpenses />, RoleGroups.FINANCE) },
       { path: '/reports/services', element: rg(<ReportsServices />, RoleGroups.SERVICES) },
