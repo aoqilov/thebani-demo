@@ -10,6 +10,8 @@ import ChartWeekly from './charts/ChartWeekly'
 import AttentionCard from './components/AttentionCard'
 import DashboardKpiRow, { DashboardPeriodKpiRow } from './components/DashboardKpiRow'
 import TopItemsCard from './components/TopItemsCard'
+import TopServicesCard from './components/TopServicesCard'
+import TopStaffCard from './components/TopStaffCard'
 import WarehouseCard from './components/WarehouseCard'
 import { useDashboard } from './hooks/useDashboard'
 
@@ -39,6 +41,10 @@ export default function FeatureDashboard() {
       <div className="grid grid-cols-1 items-start gap-4 desktop:grid-cols-2">
         <TopItemsCard items={d.topItems} />
         <ChartStructure data={d.structure} />
+      </div>
+      <div className="grid grid-cols-1 items-start gap-4 desktop:grid-cols-2">
+        <TopStaffCard data={d.topStaff} />
+        <TopServicesCard items={d.topServices} />
       </div>
 
       {/* Склад — всегда текущее состояние */}

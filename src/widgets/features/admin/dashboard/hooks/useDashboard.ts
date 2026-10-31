@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { byHour, closedToday, methodTotals, structure, sum, topItems } from '@/data/analytics'
 import { isStopped, itemState } from '@/data/menu.calc'
 import { pnl } from '@/data/pnl'
+import { cashierStats, waiterStats } from '@/data/staffStats'
+import { masterName } from '@/types/services.types'
 import { PAY_METHOD_LABEL, type PayMethod } from '@/types/order.types'
 import type { Period } from '@/widgets/shared-ui/PeriodFilter'
 import { minutesSince } from '../../../waiter/constants'
@@ -11,7 +13,7 @@ import { useOrders } from '../../../waiter/hooks/useOrders'
 import { useExpenses } from '../../accounting-expenses/hooks/useExpenses'
 import { useMenuItems } from '../../menu/hooks/useMenu'
 import { useItemCost } from '../../reports-pnl/hooks/useItemCost'
-import { useMasters } from '../../services-list/hooks/useServices'
+import { useMasters, useServiceRecords, useServices } from '../../services-list/hooks/useServices'
 import { useProducts, useStock, useSuppliers } from '../../warehouse-common/hooks/useWarehouse'
 import { usePurchaseOrders } from '../../warehouse-common/hooks/useWarehouseOps'
 import { useCostCtx } from '../../warehouse-recipes/components/useCostCtx'
@@ -30,6 +32,8 @@ export function useDashboard(period: Period): DashboardData {
   const { data: lockers = [] } = useLockers()
   const { data: expenses = [] } = useExpenses()
   const { data: masters = [] } = useMasters()
+  const { data: records = [] } = useServiceRecords()
+  const { data: services = [] } = useServices()
   const { data: stock = [] } = useStock()
   const { data: products = [] } = useProducts()
   const { data: suppliers = [] } = useSuppliers()
@@ -88,6 +92,32 @@ export function useDashboard(period: Period): DashboardData {
 
     const top = topItems(periodOrders).slice(0, 5).map((s) => ({ id: s.menuItemId, name: s.name, qty: s.qty, revenue: s.revenue }))
 
+    // ── топ сотрудников и услуг за период ──
+    const inPeriod = (at?: string) => !!at && at.slice(0, 10) >= from && at.slice(0, 10) <= to
+    const periodRecords = records.filter((r) => inPeriod(r.charge.at))
+    const topMasters = masters
+      .map((m) => {
+        const mine = periodRecords.filter((r) => r.charge.masterId === m.id)
+        return { name: masterName(m), count: mine.length, amount: mine.reduce((s, r) => s + r.charge.amount, 0) }
+      })
+      .filter((m) => m.count > 0)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5)
+    const topStaff: DashboardData['topStaff'] = {
+      waiters: waiterStats(closed, from, to).slice(0, 5).map((w) => ({ name: w.name, count: w.orders, amount: w.sales })),
+      cashiers: cashierStats(closed, from, to).slice(0, 5).map((c) => ({ name: c.name, count: c.orders, amount: c.revenue })),
+      masters: topMasters,
+    }
+    const bySvc = new Map<string, { name: string; count: number; amount: number }>()
+    for (const r of periodRecords) {
+      const name = services.find((s) => s.id === r.charge.serviceId)?.name ?? r.charge.title.replace(/, \d+ мин$/, '')
+      const cur = bySvc.get(name) ?? { name, count: 0, amount: 0 }
+      cur.count += 1
+      cur.amount += r.charge.amount
+      bySvc.set(name, cur)
+    }
+    const topServices = [...bySvc.values()].sort((a, b) => b.amount - a.amount).slice(0, 5)
+
     // ── склад и поставки ──
     const pm = new Map(products.map((p) => [p.id, p]))
     const lowStock = stock
@@ -127,10 +157,12 @@ export function useDashboard(period: Period): DashboardData {
       daily,
       methods,
       topItems: top,
+      topStaff,
+      topServices,
       lowStock,
       deliveries,
       structure: structure(periodOrders),
       attention,
     }
-  }, [period, open, closed, menu, lockers, expenses, masters, stock, products, suppliers, purchaseOrders, ctx, itemCost])
+  }, [period, open, closed, menu, lockers, expenses, masters, stock, products, suppliers, purchaseOrders, ctx, itemCost, records, services])
 }

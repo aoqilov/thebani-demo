@@ -60,8 +60,19 @@ export interface DashboardData {
   /** Оплаты за период по способам */
   methods: { name: string; value: number }[]
   topItems: TopItem[]
+  topStaff: { waiters: TopRow[]; cashiers: TopRow[]; masters: TopRow[] }
+  topServices: TopRow[]
   lowStock: LowStockItem[]
   deliveries: PendingDelivery[]
   structure: Structure
   attention: AttentionItem[]
+}
+
+/** Строка рейтинга: сотрудник или услуга. */
+export interface TopRow {
+  name: string
+  /** Чеков / услуг */
+  count: number
+  /** Сум */
+  amount: number
 }
